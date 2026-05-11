@@ -82,7 +82,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '0 32px 32px', maxWidth: 1280, margin: '0 auto', left: 0, right: 0 }}>
             <Link
-              href="/"
+              href="/services"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -211,7 +211,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
               }}
             >
               {sorted.map(listing => {
-                const provider = listing.provider as { id: string; name: string; profile_image: string | null } | null
+                const provider = (Array.isArray(listing.provider) ? listing.provider[0] : listing.provider) as { id: string; name: string; profile_image: string | null } | null
                 return (
                   <ServiceCard
                     key={listing.id}

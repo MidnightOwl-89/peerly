@@ -57,7 +57,7 @@ export default function BookingConfirmedPage() {
     <div
       style={{
         minHeight: '100vh',
-        backgroundColor: '#0a0a0f',
+        backgroundColor: '#0d0b0f',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

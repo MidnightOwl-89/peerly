@@ -287,8 +287,25 @@ export default function BookingWidget({ listing, provider, currentUserId }: Book
               transition: 'background 0.2s',
             }}
           >
-            {loading ? 'Booking...' : `Book Now — $${total.toFixed(2)}`}
+            {loading ? 'Booking...' : `Request Booking — $${total.toFixed(2)}`}
           </button>
+
+          {/* What happens next */}
+          <div style={{ marginTop: 14, padding: '14px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(240,237,232,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>What happens next</p>
+            {[
+              { step: '1', text: 'Your request is sent to the provider' },
+              { step: '2', text: 'They confirm and you\'ll get a notification' },
+              { step: '3', text: 'Meet up and pay via Venmo or Cash App' },
+            ].map(s => (
+              <div key={s.step} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
+                <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(230,51,41,0.12)', border: '1px solid rgba(230,51,41,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#e63329' }}>{s.step}</span>
+                </div>
+                <p style={{ fontSize: 12, color: 'rgba(240,237,232,0.5)', lineHeight: 1.5, paddingTop: 2 }}>{s.text}</p>
+              </div>
+            ))}
+          </div>
         </>
       )}
 

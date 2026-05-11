@@ -211,3 +211,33 @@ body {
     min-height: 44px;
   }
 }
+
+/* ── Service card hover effects ─────────────────── */
+.service-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(230,51,41,0.35) !important;
+  box-shadow: 0 12px 40px rgba(230,51,41,0.12);
+}
+.service-card:hover .service-card-overlay {
+  opacity: 1 !important;
+}
+.service-card:hover .service-card-img {
+  transform: scale(1.04);
+  transition: transform 0.4s ease;
+}
+.service-card-img {
+  transition: transform 0.4s ease;
+}
+
+/* ── Provider chip hover ─────────────────────────── */
+.provider-chip:hover {
+  border-color: rgba(230,51,41,0.4) !important;
+  transform: translateY(-2px);
+}
+
+/* ── Listing layout responsive ──────────────────── */
+@media (max-width: 900px) {
+  .listing-layout {
+    grid-template-columns: 1fr !important;
+  }
+}

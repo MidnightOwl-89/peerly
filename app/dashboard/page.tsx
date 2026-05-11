@@ -116,7 +116,7 @@ export default function DashboardPage() {
     return (
       <>
         <Navbar />
-        <main style={{ minHeight: '100vh', backgroundColor: '#0a0a0f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <main style={{ minHeight: '100vh', backgroundColor: '#0d0b0f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#e63329' }} className="animate-spin-slow" />
         </main>
       </>
@@ -166,7 +166,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0a0a0f', paddingTop: 68 }}>
+      <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0d0b0f', paddingTop: 68 }}>
         {/* Sidebar */}
         <aside
           className="hidden md:flex"
@@ -214,7 +214,7 @@ export default function DashboardPage() {
                 transition: 'all 0.2s',
               }}
             >
-              {'icon' in t && t.icon}
+              {'icon' in t && (t as { icon: React.ReactNode }).icon}
               {t.label}
             </button>
           ))}
@@ -309,7 +309,7 @@ export default function DashboardPage() {
                   const avg = revs.length ? revs.reduce((s: number, r: { rating: number }) => s + r.rating, 0) / revs.length : null
                   return (
                     <div key={l.id} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, overflow: 'hidden' }}>
-                      <div style={{ height: 140, background: 'linear-gradient(135deg, rgba(230,51,41,0.1), #0a0a0f)', position: 'relative' }}>
+                      <div style={{ height: 140, background: 'linear-gradient(135deg, rgba(230,51,41,0.1), #0d0b0f)', position: 'relative' }}>
                         {l.images?.[0] && <img src={l.images[0]} alt={l.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                         <div style={{ position: 'absolute', top: 10, right: 10 }}>
                           <button
@@ -464,11 +464,10 @@ export default function DashboardPage() {
           left: 0,
           right: 0,
           zIndex: 90,
-          background: 'rgba(10,10,15,0.95)',
+          background: 'rgba(13,11,15,0.97)',
           backdropFilter: 'blur(12px)',
           borderTop: '1px solid rgba(255,255,255,0.07)',
           padding: '8px 0 env(safe-area-inset-bottom, 8px)',
-          display: 'flex',
           justifyContent: 'space-around',
         }}
       >
@@ -491,7 +490,7 @@ export default function DashboardPage() {
               fontWeight: tab === t.id ? 600 : 400,
             }}
           >
-            {'icon' in t && t.icon}
+            {'icon' in t && (t as { icon: React.ReactNode }).icon}
             {t.label}
           </button>
         ))}
@@ -520,22 +519,36 @@ function SettingsTab({ user, profile }: { user: any; profile: any }) {
   const [bio, setBio] = useState(profile?.bio ?? '')
   const [major, setMajor] = useState(profile?.major ?? '')
   const [year, setYear] = useState(profile?.year ?? '')
+  const [linkedin, setLinkedin] = useState(profile?.social_links?.linkedin ?? '')
+  const [instagram, setInstagram] = useState(profile?.social_links?.instagram ?? '')
+  const [venmo, setVenmo] = useState(profile?.social_links?.venmo ?? '')
+  const [cashapp, setCashapp] = useState(profile?.social_links?.cashapp ?? '')
+  const [portfolio, setPortfolio] = useState(profile?.social_links?.portfolio ?? '')
   const [saved, setSaved] = useState(false)
 
   async function save() {
     if (!user) return
     const supabase = createClient()
-    await supabase.from('profiles').update({ name, bio, major, year }).eq('id', user.id)
+    const social: Record<string, string> = {}
+    if (linkedin) social.linkedin = linkedin
+    if (instagram) social.instagram = instagram
+    if (venmo) social.venmo = venmo
+    if (cashapp) social.cashapp = cashapp
+    if (portfolio) social.portfolio = portfolio
+    await supabase.from('profiles').update({
+      name, bio, major, year,
+      social_links: Object.keys(social).length > 0 ? social : null,
+    }).eq('id', user.id)
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
 
   return (
-    <div style={{ maxWidth: 520 }}>
+    <div style={{ maxWidth: 560 }}>
       <h1 style={{ fontFamily: 'var(--font-syne)', fontWeight: 800, fontSize: 24, color: '#f0ede8', marginBottom: 28 }}>Profile Settings</h1>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div><label style={lbl}>Full Name</label><input value={name} onChange={e => setName(e.target.value)} style={inp} /></div>
-        <div><label style={lbl}>Bio</label><textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} style={{ ...inp, resize: 'none', fontFamily: 'var(--font-dm-sans)' }} /></div>
+        <div><label style={lbl}>Bio</label><textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} style={{ ...inp, resize: 'none' }} /></div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div><label style={lbl}>Major</label><input value={major} onChange={e => setMajor(e.target.value)} style={inp} /></div>
           <div>
@@ -546,8 +559,33 @@ function SettingsTab({ user, profile }: { user: any; profile: any }) {
             </select>
           </div>
         </div>
+
+        {/* Divider */}
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 16 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(240,237,232,0.35)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Payment & Social</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <label style={lbl}>💸 Venmo handle</label>
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(240,237,232,0.3)', fontSize: 14 }}>@</span>
+                <input value={venmo} onChange={e => setVenmo(e.target.value)} placeholder="yourhandle" style={{ ...inp, paddingLeft: 28 }} />
+              </div>
+            </div>
+            <div>
+              <label style={lbl}>💚 Cash App $cashtag</label>
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(240,237,232,0.3)', fontSize: 14 }}>$</span>
+                <input value={cashapp} onChange={e => setCashapp(e.target.value)} placeholder="yourcashtag" style={{ ...inp, paddingLeft: 28 }} />
+              </div>
+            </div>
+            <div><label style={lbl}>🔗 LinkedIn</label><input value={linkedin} onChange={e => setLinkedin(e.target.value)} placeholder="linkedin.com/in/yourname" style={inp} /></div>
+            <div><label style={lbl}>📸 Instagram</label><input value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="@yourhandle" style={inp} /></div>
+            <div><label style={lbl}>🌐 Portfolio / Website</label><input value={portfolio} onChange={e => setPortfolio(e.target.value)} placeholder="yoursite.com" style={inp} /></div>
+          </div>
+        </div>
+
         <button onClick={save} style={{ padding: '13px', borderRadius: 12, backgroundColor: saved ? '#10b981' : '#e63329', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-syne)', border: 'none', cursor: 'pointer', transition: 'background 0.3s' }}>
-          {saved ? 'Saved!' : 'Save Changes'}
+          {saved ? '✓ Saved!' : 'Save Changes'}
         </button>
       </div>
     </div>

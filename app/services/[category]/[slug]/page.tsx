@@ -23,7 +23,7 @@ export default async function ListingPage({ params }: Props) {
     .from('listings')
     .select(`
       *,
-      provider:profiles(*),
+      provider:profiles(id, name, profile_image, bio, year, major, social_links),
       category:categories(slug, name),
       reviews(*, author:profiles(name, profile_image))
     `)
@@ -43,7 +43,7 @@ export default async function ListingPage({ params }: Props) {
     return (
       <>
         <Navbar />
-        <main style={{ backgroundColor: '#0a0a0f', minHeight: '100vh', padding: '120px 24px 60px' }}>
+        <main style={{ backgroundColor: '#0d0b0f', minHeight: '100vh', padding: '120px 24px 60px' }}>
           <div style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center' }}>
             <p style={{ color: 'rgba(240,237,232,0.3)', fontSize: 13, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               Unavailable
@@ -59,7 +59,7 @@ export default async function ListingPage({ params }: Props) {
                 <p style={{ color: 'rgba(240,237,232,0.4)', fontSize: 13, marginBottom: 20 }}>Similar services you might like:</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {related.map((r) => {
-                    const p = r.provider as { name: string } | null
+                    const p = Array.isArray(r.provider) ? (r.provider[0] as { name: string } | undefined) ?? null : r.provider as { name: string } | null
                     return (
                       <Link key={r.id} href={`/services/${category}/${r.slug}`} style={{ padding: '16px', borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', textDecoration: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ color: '#f0ede8', fontSize: 14, fontWeight: 500 }}>{r.title}</span>
@@ -77,7 +77,7 @@ export default async function ListingPage({ params }: Props) {
     )
   }
 
-  const provider = listing.provider as { id: string; name: string; profile_image: string | null; bio: string | null } | null
+  const provider = listing.provider as { id: string; name: string; profile_image: string | null; bio: string | null; year?: string; major?: string; social_links?: Record<string, string> | null } | null
   const reviews = (listing.reviews ?? []) as Array<{ id: string; rating: number; text: string; created_at: string; author: { name: string; profile_image: string | null } | null }>
   const avgRating = reviews.length
     ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
@@ -90,7 +90,7 @@ export default async function ListingPage({ params }: Props) {
   return (
     <>
       <Navbar />
-      <main style={{ backgroundColor: '#0a0a0f', minHeight: '100vh', paddingTop: 80 }}>
+      <main style={{ backgroundColor: '#0d0b0f', minHeight: '100vh', paddingTop: 80 }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px' }}>
           {/* Back link */}
           <Link
@@ -120,7 +120,7 @@ export default async function ListingPage({ params }: Props) {
                 {listing.images?.[0] ? (
                   <Image src={listing.images[0]} alt={listing.title} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 60vw" />
                 ) : (
-                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(230,51,41,0.12), #0a0a0f)' }} />
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(230,51,41,0.12), #0d0b0f)' }} />
                 )}
               </div>
 
@@ -156,7 +156,7 @@ export default async function ListingPage({ params }: Props) {
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.07)',
                   borderRadius: 16,
-                  marginBottom: 36,
+                  marginBottom: 20,
                 }}
               >
                 <h2 style={{ fontFamily: 'var(--font-syne)', fontWeight: 700, fontSize: 16, color: '#f0ede8', marginBottom: 12 }}>
@@ -166,6 +166,60 @@ export default async function ListingPage({ params }: Props) {
                   {listing.description}
                 </p>
               </div>
+
+              {/* About the Provider */}
+              {provider && (
+                <div style={{ padding: '24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, marginBottom: 36 }}>
+                  <h2 style={{ fontFamily: 'var(--font-syne)', fontWeight: 700, fontSize: 16, color: '#f0ede8', marginBottom: 16 }}>
+                    About the provider
+                  </h2>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                    <ProviderAvatar name={provider.name} imageUrl={provider.profile_image} size={52} />
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontWeight: 700, fontSize: 15, color: '#f0ede8', marginBottom: 4 }}>{provider.name}</p>
+                      {/* Year + Major */}
+                      {(provider.year || provider.major) && (
+                        <p style={{ fontSize: 12, color: 'rgba(240,237,232,0.45)', marginBottom: 8 }}>
+                          {[provider.year, provider.major].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                      {avgRating !== null && (
+                        <div style={{ marginBottom: 8 }}>
+                          <StarRating rating={avgRating} count={reviews.length} size="sm" />
+                        </div>
+                      )}
+                      {provider.bio && (
+                        <p style={{ color: 'rgba(240,237,232,0.55)', fontSize: 13, lineHeight: 1.65 }}>{provider.bio}</p>
+                      )}
+                      {/* Social / payment links */}
+                      {provider.social_links && (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                          {provider.social_links.linkedin && (
+                            <a href={provider.social_links.linkedin.startsWith('http') ? provider.social_links.linkedin : `https://${provider.social_links.linkedin}`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(240,237,232,0.6)', fontSize: 12, textDecoration: 'none' }}>
+                              🔗 LinkedIn
+                            </a>
+                          )}
+                          {provider.social_links.instagram && (
+                            <a href={`https://instagram.com/${provider.social_links.instagram.replace('@','')}`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(240,237,232,0.6)', fontSize: 12, textDecoration: 'none' }}>
+                              📸 Instagram
+                            </a>
+                          )}
+                          {provider.social_links.venmo && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', color: '#10b981', fontSize: 12, fontWeight: 600 }}>
+                              💸 Venmo @{provider.social_links.venmo}
+                            </span>
+                          )}
+                          {provider.social_links.cashapp && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', color: '#10b981', fontSize: 12, fontWeight: 600 }}>
+                              💚 Cash App ${provider.social_links.cashapp}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Reviews */}
               <div>
@@ -184,7 +238,11 @@ export default async function ListingPage({ params }: Props) {
                 </div>
 
                 {reviews.length === 0 ? (
-                  <p style={{ color: 'rgba(240,237,232,0.3)', fontSize: 14 }}>No reviews yet.</p>
+                  <div style={{ padding: '28px', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: 14, textAlign: 'center' }}>
+                    <p style={{ fontSize: 22, marginBottom: 8 }}>⭐</p>
+                    <p style={{ color: '#f0ede8', fontSize: 14, fontWeight: 600, marginBottom: 4 }}>No reviews yet</p>
+                    <p style={{ color: 'rgba(240,237,232,0.35)', fontSize: 13 }}>Be the first to book and leave a review.</p>
+                  </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     {reviews.map(rev => (
@@ -242,13 +300,6 @@ export default async function ListingPage({ params }: Props) {
       </main>
       <Footer />
 
-      <style>{`
-        @media (max-width: 900px) {
-          .listing-layout {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
     </>
   )
 }
