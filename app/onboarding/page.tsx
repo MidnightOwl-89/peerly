@@ -19,15 +19,17 @@ export default function OnboardingPage() {
   const [linkedin, setLinkedin] = useState('')
   const [instagram, setInstagram] = useState('')
   const [portfolio, setPortfolio] = useState('')
+  const [venmo, setVenmo] = useState('')
+  const [cashapp, setCashapp] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const isProvider = intent === 'offer' || intent === 'both'
 
-  // Steps: 0=intent, 1=profile (provider only), 2=social (provider only), 3=done
+  // Steps: 0=intent, 1=profile (provider only), 2=payment+social (provider only), 3=done
   const totalSteps = isProvider ? 4 : 2
   const stepLabels = isProvider
-    ? ['Intent', 'Profile', 'Links', 'Done']
+    ? ['Intent', 'Profile', 'Payment', 'Done']
     : ['Intent', 'Done']
 
   function currentStepIndex() {
@@ -40,6 +42,8 @@ export default function OnboardingPage() {
     setLoading(true)
     const supabase = createClient()
     const socialLinks: Record<string, string> = {}
+    if (venmo) socialLinks.venmo = venmo
+    if (cashapp) socialLinks.cashapp = cashapp
     if (linkedin) socialLinks.linkedin = linkedin
     if (instagram) socialLinks.instagram = instagram
     if (portfolio) socialLinks.portfolio = portfolio
@@ -244,35 +248,54 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* ── Step 2: Social links ── */}
+        {/* ── Step 2: Payment & Social ── */}
         {step === 2 && (
           <div className="animate-fade-up">
-            <h1 style={headingStyle}>Add your social links</h1>
-            <p style={subStyle}>Help customers trust you by linking your profiles. All optional.</p>
+            <h1 style={headingStyle}>How will you get paid?</h1>
+            <p style={subStyle}>Buyers pay you directly after the service. Add your handles so they know how to send money.</p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 28 }}>
-              {[
-                { icon: '🔗', label: 'LinkedIn', placeholder: 'linkedin.com/in/yourname', value: linkedin, set: setLinkedin },
-                { icon: '📸', label: 'Instagram', placeholder: '@yourhandle', value: instagram, set: setInstagram },
-                { icon: '🌐', label: 'Portfolio / Website', placeholder: 'yoursite.com', value: portfolio, set: setPortfolio },
-              ].map(field => (
-                <div key={field.label}>
-                  <label style={labelStyle}>{field.icon} {field.label}</label>
-                  <input
-                    type="text"
-                    placeholder={field.placeholder}
-                    value={field.value}
-                    onChange={e => field.set(e.target.value)}
-                    style={inputStyle}
-                  />
+            {/* Payment handles */}
+            <div style={{ marginBottom: 24 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(240,237,232,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Payment handles</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <label style={labelStyle}>💸 Venmo</label>
+                  <div style={{ position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'rgba(240,237,232,0.35)', fontSize: 15, fontWeight: 600 }}>@</span>
+                    <input type="text" placeholder="yourhandle" value={venmo} onChange={e => setVenmo(e.target.value)} style={{ ...inputStyle, paddingLeft: 32 }} />
+                  </div>
                 </div>
-              ))}
+                <div>
+                  <label style={labelStyle}>💚 Cash App</label>
+                  <div style={{ position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'rgba(240,237,232,0.35)', fontSize: 15, fontWeight: 600 }}>$</span>
+                    <input type="text" placeholder="yourcashtag" value={cashapp} onChange={e => setCashapp(e.target.value)} style={{ ...inputStyle, paddingLeft: 32 }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Social links */}
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 20, marginBottom: 28 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(240,237,232,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Social profiles <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {[
+                  { icon: '🔗', label: 'LinkedIn', placeholder: 'linkedin.com/in/yourname', value: linkedin, set: setLinkedin },
+                  { icon: '📸', label: 'Instagram', placeholder: '@yourhandle', value: instagram, set: setInstagram },
+                  { icon: '🌐', label: 'Portfolio / Website', placeholder: 'yoursite.com', value: portfolio, set: setPortfolio },
+                ].map(field => (
+                  <div key={field.label}>
+                    <label style={labelStyle}>{field.icon} {field.label}</label>
+                    <input type="text" placeholder={field.placeholder} value={field.value} onChange={e => field.set(e.target.value)} style={inputStyle} />
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
               <Button onClick={() => setStep(1)} variant="ghost" size="lg">Back</Button>
               <Button onClick={() => setStep(3)} variant="primary" size="lg" fullWidth>
-                {linkedin || instagram || portfolio ? 'Continue' : 'Skip for now'}
+                {venmo || cashapp ? 'Continue' : 'Skip for now'}
               </Button>
             </div>
           </div>

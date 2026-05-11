@@ -11,7 +11,7 @@ export interface Profile {
   role: 'user' | 'admin'
   verification_status: 'unverified' | 'pending' | 'verified' | 'rejected'
   verification_note: string | null
-  social_links: { linkedin?: string; instagram?: string; portfolio?: string } | null
+  social_links: { linkedin?: string; instagram?: string; portfolio?: string; venmo?: string; cashapp?: string } | null
   stripe_account_id: string | null
   stripe_payouts_enabled: boolean
   created_at: string

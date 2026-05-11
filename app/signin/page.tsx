@@ -3,13 +3,14 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function SignInPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const redirect = searchParams.get('redirect') ?? '/dashboard'
+  const redirect = typeof window !== 'undefined'
+    ? (new URLSearchParams(window.location.search).get('redirect') ?? '/dashboard')
+    : '/dashboard'
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

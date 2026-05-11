@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import ProviderAvatar from '@/components/ProviderAvatar'
@@ -14,7 +13,6 @@ type Tab = 'overview' | 'listings' | 'bookings' | 'messages' | 'settings'
 
 export default function DashboardPage() {
   const { user, profile, isProvider, isLoading } = useAuth()
-  const searchParams = useSearchParams()
   const [tab, setTab] = useState<Tab>('overview')
   const [bookings, setBookings] = useState<Booking[]>([])
   const [listings, setListings] = useState<any[]>([])
@@ -26,12 +24,12 @@ export default function DashboardPage() {
   const [upgradingToProvider, setUpgradingToProvider] = useState(false)
 
   useEffect(() => {
-    if (searchParams.get('upgrade') === 'true') {
-      setShowUpgrade(true)
-    }
-    const msgId = searchParams.get('message')
+    if (typeof window === 'undefined') return
+    const p = new URLSearchParams(window.location.search)
+    if (p.get('upgrade') === 'true') setShowUpgrade(true)
+    const msgId = p.get('message')
     if (msgId) setTab('messages')
-  }, [searchParams])
+  }, [])
 
   useEffect(() => {
     if (!user) return
@@ -184,6 +182,12 @@ export default function DashboardPage() {
           }}
         >
           <div style={{ padding: '12px 12px 20px' }}>
+            {isProvider && (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 6, background: 'rgba(230,51,41,0.1)', border: '1px solid rgba(230,51,41,0.2)', marginBottom: 10 }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="#e63329"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#e63329', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Provider Mode</span>
+              </div>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <ProviderAvatar name={profile?.name ?? 'U'} imageUrl={profile?.profile_image} size={36} />
               <div>
@@ -231,20 +235,90 @@ export default function DashboardPage() {
 
         {/* Main content */}
         <main style={{ flex: 1, padding: '32px 28px', maxWidth: 1000 }}>
-          {/* Overview tab */}
+          {/* Overview tab — Provider */}
           {tab === 'overview' && isProvider && (
             <div>
               <h1 style={{ fontFamily: 'var(--font-syne)', fontWeight: 800, fontSize: 26, color: '#f0ede8', marginBottom: 6 }}>
                 Welcome back, {profile?.name?.split(' ')[0] ?? 'there'}
               </h1>
-              <p style={{ color: 'rgba(240,237,232,0.4)', fontSize: 14, marginBottom: 32 }}>Here&apos;s what&apos;s happening with your services.</p>
+              <p style={{ color: 'rgba(240,237,232,0.4)', fontSize: 14, marginBottom: 24 }}>Here&apos;s what&apos;s happening with your services.</p>
+
+              {/* Pending requests callout */}
+              {pendingCount > 0 && (
+                <div
+                  style={{ background: 'rgba(230,51,41,0.08)', border: '1px solid rgba(230,51,41,0.3)', borderRadius: 14, padding: '16px 20px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', cursor: 'pointer' }}
+                  onClick={() => setTab('bookings')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(230,51,41,0.15)', border: '1px solid rgba(230,51,41,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e63329" strokeWidth={2}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    </div>
+                    <div>
+                      <p style={{ fontWeight: 700, fontSize: 14, color: '#f0ede8' }}>
+                        {pendingCount} new booking request{pendingCount > 1 ? 's' : ''} waiting
+                      </p>
+                      <p style={{ fontSize: 12, color: 'rgba(240,237,232,0.45)', marginTop: 2 }}>Students are waiting for your reply — respond quickly to get booked.</p>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#e63329', whiteSpace: 'nowrap' }}>Review →</span>
+                </div>
+              )}
+
+              {/* Setup checklist */}
+              {(() => {
+                const hasPayment = !!(profile?.social_links?.venmo || profile?.social_links?.cashapp)
+                const hasListing = listings.length > 0
+                const hasPhoto = !!profile?.profile_image
+                const hasBio = !!profile?.bio
+                const allDone = hasPayment && hasListing && hasPhoto && hasBio
+                if (allDone) return null
+                const items = [
+                  { done: hasPhoto, label: 'Add a profile photo', action: () => setTab('settings') },
+                  { done: hasBio, label: 'Write a short bio', action: () => setTab('settings') },
+                  { done: hasPayment, label: 'Add Venmo or Cash App handle', action: () => setTab('settings') },
+                  { done: hasListing, label: 'Create your first listing', href: '/dashboard/listings/new' },
+                ]
+                const doneCount = items.filter(i => i.done).length
+                return (
+                  <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '20px', marginBottom: 24 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                      <p style={{ fontFamily: 'var(--font-syne)', fontWeight: 700, fontSize: 14, color: '#f0ede8' }}>Complete your profile</p>
+                      <span style={{ fontSize: 12, color: 'rgba(240,237,232,0.4)' }}>{doneCount}/{items.length}</span>
+                    </div>
+                    <div style={{ height: 4, borderRadius: 4, background: 'rgba(255,255,255,0.07)', marginBottom: 16 }}>
+                      <div style={{ height: '100%', borderRadius: 4, background: '#e63329', width: `${(doneCount / items.length) * 100}%`, transition: 'width 0.4s ease' }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {items.map(item => (
+                        <div
+                          key={item.label}
+                          style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: item.done ? 'default' : 'pointer', opacity: item.done ? 0.45 : 1 }}
+                          onClick={!item.done ? (item.href ? undefined : item.action) : undefined}
+                        >
+                          <div style={{ width: 20, height: 20, borderRadius: '50%', border: `1.5px solid ${item.done ? '#10b981' : 'rgba(255,255,255,0.2)'}`, background: item.done ? 'rgba(16,185,129,0.15)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}>
+                            {item.done && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth={3}><polyline points="20 6 9 17 4 12"/></svg>}
+                          </div>
+                          {!item.done && item.href ? (
+                            <Link href={item.href} style={{ fontSize: 13, color: '#f0ede8', textDecoration: 'none' }}>{item.label} →</Link>
+                          ) : (
+                            <span style={{ fontSize: 13, color: item.done ? 'rgba(240,237,232,0.45)' : '#f0ede8' }}>{item.label}{!item.done ? ' →' : ''}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
 
               {/* Stat cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 36 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 32 }}>
+                <div style={{ padding: '20px', background: 'rgba(230,51,41,0.07)', border: '1px solid rgba(230,51,41,0.2)', borderRadius: 16 }}>
+                  <p style={{ color: 'rgba(240,237,232,0.45)', fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Earned Total</p>
+                  <p style={{ fontFamily: 'var(--font-syne)', fontWeight: 800, fontSize: 28, color: '#e63329' }}>${earned.toFixed(0)}</p>
+                </div>
                 {[
-                  { label: 'Earned This Month', value: `$${earned.toFixed(0)}` },
-                  { label: 'Bookings Completed', value: completedCount },
-                  { label: 'Pending Requests', value: pendingCount },
+                  { label: 'Completed', value: completedCount },
+                  { label: 'Pending', value: pendingCount },
                   { label: 'Active Listings', value: listings.filter(l => l.active).length },
                 ].map(stat => (
                   <div key={stat.label} style={{ padding: '20px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16 }}>
@@ -254,36 +328,40 @@ export default function DashboardPage() {
                 ))}
               </div>
 
-              {/* Upcoming bookings */}
-              <h2 style={{ fontFamily: 'var(--font-syne)', fontWeight: 700, fontSize: 16, color: '#f0ede8', marginBottom: 16 }}>Upcoming Bookings</h2>
-              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden', marginBottom: 36 }}>
-                {bookings.filter(b => b.status !== 'cancelled').slice(0, 5).map((b, i) => {
-                  const buyer = b.buyer as { name: string; profile_image: string | null } | null
-                  return (
-                    <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderBottom: i < 4 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                      <ProviderAvatar name={buyer?.name ?? 'U'} imageUrl={buyer?.profile_image} size={32} />
-                      <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: 13, fontWeight: 500, color: '#f0ede8' }}>{buyer?.name ?? 'Student'}</p>
-                        <p style={{ fontSize: 11, color: 'rgba(240,237,232,0.4)' }}>{(b.listing as { title?: string } | null)?.title}</p>
-                      </div>
-                      <p style={{ fontSize: 12, color: 'rgba(240,237,232,0.4)' }}>{b.date}</p>
-                      <StatusBadge status={b.status} />
-                    </div>
-                  )
-                })}
-                {bookings.length === 0 && (
-                  <p style={{ padding: '24px', color: 'rgba(240,237,232,0.3)', fontSize: 13, textAlign: 'center' }}>No bookings yet.</p>
-                )}
-              </div>
+              {/* Incoming requests */}
+              {bookings.filter(b => b.status === 'pending' && b.provider_id === user?.id).length > 0 && (
+                <>
+                  <h2 style={{ fontFamily: 'var(--font-syne)', fontWeight: 700, fontSize: 16, color: '#f0ede8', marginBottom: 14 }}>Requests to Review</h2>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden', marginBottom: 28 }}>
+                    {bookings.filter(b => b.status === 'pending' && b.provider_id === user?.id).map((b, i, arr) => {
+                      const buyer = b.buyer as { name: string; profile_image: string | null } | null
+                      return (
+                        <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', flexWrap: 'wrap' }}>
+                          <ProviderAvatar name={buyer?.name ?? 'U'} imageUrl={buyer?.profile_image} size={32} />
+                          <div style={{ flex: 1, minWidth: 100 }}>
+                            <p style={{ fontSize: 13, fontWeight: 500, color: '#f0ede8' }}>{buyer?.name ?? 'Student'}</p>
+                            <p style={{ fontSize: 11, color: 'rgba(240,237,232,0.4)' }}>{(b.listing as { title?: string } | null)?.title} · {b.date}</p>
+                          </div>
+                          <span style={{ color: '#e63329', fontWeight: 700, fontSize: 14 }}>${b.total_price}</span>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button onClick={() => updateBookingStatus(b.id, 'confirmed')} style={{ padding: '7px 14px', borderRadius: 8, backgroundColor: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>Accept</button>
+                            <button onClick={() => updateBookingStatus(b.id, 'cancelled')} style={{ padding: '7px 14px', borderRadius: 8, backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>Decline</button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
 
               {/* Active listings mini grid */}
               <h2 style={{ fontFamily: 'var(--font-syne)', fontWeight: 700, fontSize: 16, color: '#f0ede8', marginBottom: 16 }}>My Active Listings</h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
                 {listings.filter(l => l.active).slice(0, 4).map(l => (
-                  <Link key={l.id} href={`/dashboard/listings/edit/${l.slug}`} style={{ padding: '16px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, textDecoration: 'none' }}>
+                  <Link key={l.id} href={`/dashboard/listings/edit/${l.slug}`} style={{ padding: '16px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, textDecoration: 'none', transition: 'border-color 0.2s' }}>
                     <p style={{ fontWeight: 600, fontSize: 13, color: '#f0ede8', marginBottom: 6 }}>{l.title}</p>
                     <p style={{ color: '#e63329', fontFamily: 'var(--font-syne)', fontWeight: 700, fontSize: 16 }}>${l.price}/{l.price_unit}</p>
-                    <p style={{ color: 'rgba(240,237,232,0.35)', fontSize: 11, marginTop: 4 }}>{l.views} views</p>
+                    <p style={{ color: 'rgba(240,237,232,0.35)', fontSize: 11, marginTop: 4 }}>{l.views ?? 0} views</p>
                   </Link>
                 ))}
                 <Link href="/dashboard/listings/new" style={{ padding: '16px', background: 'transparent', border: '1px dashed rgba(255,255,255,0.12)', borderRadius: 14, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'rgba(240,237,232,0.35)', fontSize: 13 }}>
@@ -343,34 +421,96 @@ export default function DashboardPage() {
           {/* Bookings tab */}
           {tab === 'bookings' && (
             <div>
-              <h1 style={{ fontFamily: 'var(--font-syne)', fontWeight: 800, fontSize: 24, color: '#f0ede8', marginBottom: 24 }}>Bookings</h1>
-              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden' }}>
-                {bookings.map((b, i) => {
-                  const buyer = b.buyer as { name: string; profile_image: string | null } | null
-                  const isIncoming = b.provider_id === user?.id
-                  return (
-                    <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', borderBottom: i < bookings.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', flexWrap: 'wrap' }}>
-                      <ProviderAvatar name={buyer?.name ?? 'U'} imageUrl={buyer?.profile_image} size={34} />
-                      <div style={{ flex: 1, minWidth: 120 }}>
-                        <p style={{ fontSize: 13, fontWeight: 500, color: '#f0ede8' }}>{buyer?.name}</p>
-                        <p style={{ fontSize: 11, color: 'rgba(240,237,232,0.4)' }}>{(b.listing as { title?: string } | null)?.title}</p>
+              <h1 style={{ fontFamily: 'var(--font-syne)', fontWeight: 800, fontSize: 24, color: '#f0ede8', marginBottom: 24 }}>
+                {isProvider ? 'Booking Requests' : 'My Bookings'}
+              </h1>
+
+              {isProvider ? (
+                <>
+                  {/* Provider: incoming requests first */}
+                  {bookings.filter(b => b.provider_id === user?.id && b.status === 'pending').length > 0 && (
+                    <div style={{ marginBottom: 28 }}>
+                      <p style={{ fontSize: 11, fontWeight: 700, color: '#e63329', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Needs your response</p>
+                      <div style={{ background: 'rgba(230,51,41,0.04)', border: '1px solid rgba(230,51,41,0.18)', borderRadius: 16, overflow: 'hidden' }}>
+                        {bookings.filter(b => b.provider_id === user?.id && b.status === 'pending').map((b, i, arr) => {
+                          const buyer = b.buyer as { name: string; profile_image: string | null } | null
+                          return (
+                            <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', flexWrap: 'wrap' }}>
+                              <ProviderAvatar name={buyer?.name ?? 'U'} imageUrl={buyer?.profile_image} size={34} />
+                              <div style={{ flex: 1, minWidth: 120 }}>
+                                <p style={{ fontSize: 13, fontWeight: 500, color: '#f0ede8' }}>{buyer?.name ?? 'Student'}</p>
+                                <p style={{ fontSize: 11, color: 'rgba(240,237,232,0.4)' }}>{(b.listing as { title?: string } | null)?.title}</p>
+                                {b.notes && <p style={{ fontSize: 11, color: 'rgba(240,237,232,0.5)', marginTop: 4, fontStyle: 'italic' }}>&quot;{b.notes}&quot;</p>}
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <p style={{ fontSize: 12, color: 'rgba(240,237,232,0.4)', marginBottom: 2 }}>{b.date} · {b.time}</p>
+                                <span style={{ color: '#e63329', fontWeight: 700, fontSize: 14 }}>${b.total_price}</span>
+                              </div>
+                              <div style={{ display: 'flex', gap: 6 }}>
+                                <button onClick={() => updateBookingStatus(b.id, 'confirmed')} style={{ padding: '8px 16px', borderRadius: 8, backgroundColor: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', fontSize: 12, cursor: 'pointer', fontWeight: 700 }}>Accept</button>
+                                <button onClick={() => updateBookingStatus(b.id, 'cancelled')} style={{ padding: '8px 16px', borderRadius: 8, backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>Decline</button>
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
-                      <p style={{ fontSize: 12, color: 'rgba(240,237,232,0.4)' }}>{b.date} · {b.time}</p>
-                      <span style={{ color: '#e63329', fontWeight: 700, fontSize: 14 }}>${b.total_price}</span>
-                      <StatusBadge status={b.status} />
-                      {isIncoming && b.status === 'pending' && (
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <button onClick={() => updateBookingStatus(b.id, 'confirmed')} style={{ padding: '6px 12px', borderRadius: 8, backgroundColor: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>Accept</button>
-                          <button onClick={() => updateBookingStatus(b.id, 'cancelled')} style={{ padding: '6px 12px', borderRadius: 8, backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>Decline</button>
-                        </div>
-                      )}
                     </div>
-                  )
-                })}
-                {bookings.length === 0 && (
-                  <p style={{ padding: '32px', color: 'rgba(240,237,232,0.3)', fontSize: 13, textAlign: 'center' }}>No bookings yet.</p>
-                )}
-              </div>
+                  )}
+
+                  {/* Provider: confirmed / completed / cancelled */}
+                  {bookings.filter(b => b.provider_id === user?.id && b.status !== 'pending').length > 0 && (
+                    <div>
+                      <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(240,237,232,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>All bookings</p>
+                      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden' }}>
+                        {bookings.filter(b => b.provider_id === user?.id && b.status !== 'pending').map((b, i, arr) => {
+                          const buyer = b.buyer as { name: string; profile_image: string | null } | null
+                          return (
+                            <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', flexWrap: 'wrap' }}>
+                              <ProviderAvatar name={buyer?.name ?? 'U'} imageUrl={buyer?.profile_image} size={32} />
+                              <div style={{ flex: 1, minWidth: 120 }}>
+                                <p style={{ fontSize: 13, fontWeight: 500, color: '#f0ede8' }}>{buyer?.name ?? 'Student'}</p>
+                                <p style={{ fontSize: 11, color: 'rgba(240,237,232,0.4)' }}>{(b.listing as { title?: string } | null)?.title}</p>
+                              </div>
+                              <p style={{ fontSize: 12, color: 'rgba(240,237,232,0.4)' }}>{b.date}</p>
+                              <span style={{ color: '#e63329', fontWeight: 700, fontSize: 14 }}>${b.total_price}</span>
+                              <StatusBadge status={b.status} />
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {bookings.filter(b => b.provider_id === user?.id).length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '60px 0' }}>
+                      <p style={{ fontSize: 22, marginBottom: 10 }}>📭</p>
+                      <p style={{ color: '#f0ede8', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>No bookings yet</p>
+                      <p style={{ color: 'rgba(240,237,232,0.35)', fontSize: 13 }}>Once someone books your service, it&apos;ll show up here.</p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                /* Buyer bookings */
+                <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden' }}>
+                  {bookings.filter(b => b.buyer_id === user?.id).map((b, i, arr) => {
+                    const buyer = b.buyer as { name: string; profile_image: string | null } | null
+                    return (
+                      <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', flexWrap: 'wrap' }}>
+                        <ProviderAvatar name={buyer?.name ?? 'U'} imageUrl={buyer?.profile_image} size={34} />
+                        <div style={{ flex: 1, minWidth: 120 }}>
+                          <p style={{ fontSize: 13, fontWeight: 500, color: '#f0ede8' }}>{(b.listing as { title?: string } | null)?.title}</p>
+                          <p style={{ fontSize: 11, color: 'rgba(240,237,232,0.4)' }}>{b.date} · {b.time}</p>
+                        </div>
+                        <span style={{ color: '#e63329', fontWeight: 700, fontSize: 14 }}>${b.total_price}</span>
+                        <StatusBadge status={b.status} />
+                      </div>
+                    )
+                  })}
+                  {bookings.filter(b => b.buyer_id === user?.id).length === 0 && (
+                    <p style={{ padding: '32px', color: 'rgba(240,237,232,0.3)', fontSize: 13, textAlign: 'center' }}>No bookings yet. <Link href="/services" style={{ color: '#e63329', textDecoration: 'none' }}>Browse services →</Link></p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -457,7 +597,7 @@ export default function DashboardPage() {
 
       {/* Mobile bottom tab bar */}
       <div
-        className="md:hidden"
+        className="flex md:hidden"
         style={{
           position: 'fixed',
           bottom: 0,

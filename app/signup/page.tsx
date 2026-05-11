@@ -3,13 +3,12 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { isValidNiuEmail } from '@/lib/utils'
 
 export default function SignUpPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [wantsProvider, setWantsProvider] = useState(false)
 
   const [form, setForm] = useState({ name: '', email: '', password: '' })
@@ -18,8 +17,11 @@ export default function SignUpPage() {
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
-    if (searchParams.get('type') === 'provider') setWantsProvider(true)
-  }, [searchParams])
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search)
+      if (p.get('type') === 'provider') setWantsProvider(true)
+    }
+  }, [])
 
   function validate() {
     const errs: Record<string, string> = {}

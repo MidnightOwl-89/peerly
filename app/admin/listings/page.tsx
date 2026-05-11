@@ -27,7 +27,7 @@ export default function AdminListingsPage() {
       .from('listings')
       .select('id, title, price, price_unit, active, created_at, slug, provider:profiles(name, email), category:categories(name)')
       .order('created_at', { ascending: false })
-      .then(({ data }) => { setListings((data as AdminListing[]) ?? []); setLoading(false) })
+      .then(({ data }) => { setListings((data as unknown as AdminListing[]) ?? []); setLoading(false) })
   }, [])
 
   async function toggleActive(id: string, current: boolean) {
