@@ -100,7 +100,6 @@ export default function Navbar() {
         {/* Center links — desktop */}
         <div
           style={{
-            display: 'flex',
             alignItems: 'center',
             gap: 32,
           }}
@@ -125,7 +124,7 @@ export default function Navbar() {
         </div>
 
         {/* Right — desktop */}
-        <div className="hidden md:flex" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="hidden md:flex" style={{ alignItems: 'center', gap: 10 }}>
           {isLoading ? (
             <div style={{ width: 80, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.06)' }} />
           ) : isLoggedIn ? (
@@ -240,7 +239,6 @@ export default function Navbar() {
             border: 'none',
             cursor: 'pointer',
             padding: 8,
-            display: 'flex',
             flexDirection: 'column',
             gap: 5,
           }}

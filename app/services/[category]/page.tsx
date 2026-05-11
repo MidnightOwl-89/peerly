@@ -63,7 +63,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   return (
     <>
       <Navbar />
-      <main style={{ backgroundColor: '#0a0a0f', minHeight: '100vh' }}>
+      <main style={{ backgroundColor: '#0d0b0f', minHeight: '100vh' }}>
         {/* Hero banner */}
         <div style={{ position: 'relative', height: 260, overflow: 'hidden' }}>
           {catImage ? (
@@ -76,9 +76,9 @@ export default async function CategoryPage({ params, searchParams }: Props) {
               sizes="100vw"
             />
           ) : (
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1a0a0a, #0a0a0f)' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1a0a0a, #0d0b0f)' }} />
           )}
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, #0a0a0f 0%, rgba(10,10,15,0.4) 100%)' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, #0d0b0f 0%, rgba(10,10,15,0.4) 100%)' }} />
 
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '0 32px 32px', maxWidth: 1280, margin: '0 auto', left: 0, right: 0 }}>
             <Link
@@ -176,15 +176,31 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '40px 24px' }}>
           {sorted.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '80px 0' }}>
-              <p style={{ color: 'rgba(240,237,232,0.3)', fontSize: 16 }}>
-                No listings in this category yet.
+              <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(230,51,41,0.08)', border: '1px solid rgba(230,51,41,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(230,51,41,0.6)" strokeWidth={1.5}>
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                </svg>
+              </div>
+              <p style={{ fontFamily: 'var(--font-syne), sans-serif', fontWeight: 700, fontSize: 18, color: '#f0ede8', marginBottom: 8 }}>
+                No listings yet in {catName}
               </p>
-              <Link
-                href="/"
-                style={{ color: '#e63329', fontSize: 14, marginTop: 12, display: 'inline-block', textDecoration: 'none' }}
-              >
-                Back to home
-              </Link>
+              <p style={{ color: 'rgba(240,237,232,0.4)', fontSize: 14, marginBottom: 28, maxWidth: 320, margin: '0 auto 28px' }}>
+                Be the first to offer a service in this category, or browse what&apos;s available elsewhere.
+              </p>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <Link
+                  href="/services"
+                  style={{ padding: '10px 22px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', color: '#f0ede8', fontSize: 13, fontWeight: 500, textDecoration: 'none' }}
+                >
+                  Browse All Categories
+                </Link>
+                <Link
+                  href="/dashboard/listings/new"
+                  style={{ padding: '10px 22px', borderRadius: 10, backgroundColor: '#e63329', color: '#fff', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
+                >
+                  Create a Listing
+                </Link>
+              </div>
             </div>
           ) : (
             <div

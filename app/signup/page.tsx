@@ -67,7 +67,7 @@ export default function SignUpPage() {
       <div
         style={{
           minHeight: '100vh',
-          backgroundColor: '#0a0a0f',
+          backgroundColor: '#0d0b0f',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -151,7 +151,7 @@ export default function SignUpPage() {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0a0a0f' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0d0b0f' }}>
       {/* Left panel */}
       <div
         className="hidden lg:flex"

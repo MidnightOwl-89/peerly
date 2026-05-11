@@ -7,6 +7,8 @@
   --font-apple: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
   --font-family-syne: var(--font-apple);
   --font-family-body: var(--font-apple);
+  --font-syne: var(--font-apple);
+  --font-dm-sans: var(--font-apple);
 }
 
 * {
